@@ -21,6 +21,9 @@ class Solver:
         self.assignments = dict()
         self.reasoning = dict()
         self.current_decision_level = 0
+        self.add_clause((
+            ("true", True), ("true", True), ("true", True)
+        ))
 
     def add_clause(self, clause: Clause):
         self.clauses.append(clause)
@@ -31,11 +34,11 @@ class Solver:
         progress = False
         for i in self.unsolved_clauses.copy():
             clause = self.clauses[i]
-            leftovers = [literal for literal in clause if (literal[0], not literal[1]) not in self.assignments]
-            falsifiers = [(literal[0], not literal[1], self.assignments[(literal[0], not literal[1])]) for literal in clause if (literal[0], not literal[1]) in self.assignments]
+            leftovers = set(literal for literal in clause if (literal[0], not literal[1]) not in self.assignments)
+            falsifiers = set((literal[0], not literal[1], self.assignments[(literal[0], not literal[1])]) for literal in clause if (literal[0], not literal[1]) in self.assignments)
             assert len(leftovers) > 0
             if len(leftovers) == 1:
-                self.assign(leftovers[0], falsifiers)
+                self.assign(list(leftovers)[0], list(falsifiers))
                 self.unsolved_clauses.remove(i)
                 progress = True
         return progress
@@ -56,5 +59,3 @@ class Solver:
         if conflicty:
             return conflicty[0]
         return
-
-    # W.I.P
