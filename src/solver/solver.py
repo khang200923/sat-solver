@@ -13,6 +13,9 @@ class Solver:
     variables: Set[str] = field(init=False)
 
     def __post_init__(self):
+        self.reset()
+
+    def reset(self):
         self.assignments = dict()
         self.reasoning = dict()
         self.current_decision_level = 0
