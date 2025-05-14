@@ -54,3 +54,37 @@ class Solver:
 
     def conflict(self) -> bool:
         return li('!true') in self.assignments
+
+    def conflict_clause(self) -> ExtendedClause:
+        if not self.conflict():
+            raise ValueError("No conflict")
+        current_level = self.current_decision_level
+        leftovers: Set[Literal] = {li('!true')}
+        assert lii('!true', current_level) in self.reasoning
+        lowers: Set[Literal] = set()
+        for element in reversed(self.reasoning):
+            if len(leftovers) <= 1 and li('!true') not in leftovers:
+                break
+            if element[2] != current_level:
+                continue
+            element = element[:2]
+            if element not in leftovers:
+                continue
+            leftovers.discard(element)
+            assert lii(element, current_level) in self.reasoning
+            if not self.reasoning[lii(element, current_level)]:
+                # wow a decision literal
+                leftovers = {element}
+                break
+            for causes in self.reasoning[lii(element, current_level)]:
+                if causes[2] == current_level:
+                    leftovers.add(causes[:2])
+                else:
+                    lowers.add(causes[:2])
+        return list((literal[0], not literal[1]) for literal in lowers | leftovers)
+
+    def decide(self, literal: Literal):
+        if literal in self.assignments:
+            raise ValueError(f"Literal {literal} already assigned")
+        self.current_decision_level += 1
+        self.assign(literal, [])

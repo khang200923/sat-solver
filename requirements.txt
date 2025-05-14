@@ -6,6 +6,7 @@ packaging==25.0
 platformdirs==4.3.7
 pluggy==1.5.0
 pytest==8.3.5
+pytest-repeat==0.9.4
 tomli==2.2.1
 typing_extensions==4.13.2
 virtualenv==20.31.1
