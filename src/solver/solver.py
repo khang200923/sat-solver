@@ -1,11 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 import random
-
-Literal = Tuple[str, bool]
-LiteralInt = Tuple[str, bool, int]
-Clause = Tuple[Literal, Literal, Literal]
-ExtendedClause = List[Literal]
+from solver.types import Literal, LiteralInt, Clause, ExtendedClause
+from solver.utils import li, lii, cl, ec
 
 @dataclass
 class Solver:
@@ -21,9 +18,7 @@ class Solver:
         self.assignments = dict()
         self.reasoning = dict()
         self.current_decision_level = 0
-        self.add_clause((
-            ("true", True), ("true", True), ("true", True)
-        ))
+        self.add_clause(cl("true true true"))
 
     def add_clause(self, clause: Clause):
         self.clauses.append(clause)
@@ -36,7 +31,11 @@ class Solver:
             clause = self.clauses[i]
             leftovers = set(literal for literal in clause if (literal[0], not literal[1]) not in self.assignments)
             falsifiers = set((literal[0], not literal[1], self.assignments[(literal[0], not literal[1])]) for literal in clause if (literal[0], not literal[1]) in self.assignments)
-            assert len(leftovers) > 0
+            if len(leftovers) == 0:
+                # conflict
+                self.assign(li('!true'), list(falsifiers))
+                self.unsolved_clauses.remove(i)
+                return True
             if len(leftovers) == 1:
                 self.assign(list(leftovers)[0], list(falsifiers))
                 self.unsolved_clauses.remove(i)
@@ -53,9 +52,5 @@ class Solver:
         # just use a random literal whatever
         return (random.sample(self.unassigned_variables, 1)[0], random.choice((True, False)))
 
-    def conflict(self) -> str | None:
-        conflicty = [literal[0] for literal in self.assignments if (literal[0], not literal[1]) in self.assignments]
-        assert len(conflicty) <= 1
-        if conflicty:
-            return conflicty[0]
-        return
+    def conflict(self) -> bool:
+        return li('!true') in self.assignments
