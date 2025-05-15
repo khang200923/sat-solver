@@ -42,13 +42,12 @@ class Solver:
             self.add_clause((clause[0], clause[1], clause[2]))
             return
         link: str = f'link_{random.randint(0, 2**32)}'
-        prev_link: str = ""
         self.add_clause((clause[0], clause[1], li(link)))
         for literal in clause[2:-2]:
             prev_link = link
             link = f'link_{random.randint(0, 2**32)}'
             self.add_clause((li("!"+prev_link), literal, li(link)))
-        self.add_clause((li("!"+prev_link), clause[-2], clause[-1]))
+        self.add_clause((li("!"+link), clause[-2], clause[-1]))
 
     def unit_propagation(self) -> bool:
         progress = False
@@ -60,7 +59,7 @@ class Solver:
             if len(leftovers) == 0:
                 # conflict
                 self.assign(li('!true'), list(falsifiers))
-                return True
+                return progress
             if len(leftovers) == 1:
                 self.assign(list(leftovers)[0], list(falsifiers))
                 progress = True

@@ -1,7 +1,9 @@
+import pytest
 from solver import Solver
 from solver.utils import li, cl
 from solver.test.test_unitprop import repeated_unitprop
 
+@pytest.mark.repeat(5)
 def test_conflict_0():
     solver = Solver()
     solver.add_clause(cl("!a b !true"))
@@ -14,6 +16,7 @@ def test_conflict_0():
     assert solver.conflict()
     assert set(solver.conflict_clause()) == {li('!a'), li('!true')}
 
+@pytest.mark.repeat(5)
 def test_conflict_1():
     solver = Solver()
     solver.add_clause(cl("a !true !true"))
@@ -22,6 +25,7 @@ def test_conflict_1():
     assert solver.conflict()
     assert set(solver.conflict_clause()) == {li('!true')}
 
+@pytest.mark.repeat(5)
 def test_conflict_2():
     solver = Solver()
     solver.add_clause(cl("!true !true !true"))
@@ -29,6 +33,7 @@ def test_conflict_2():
     assert solver.conflict()
     assert set(solver.conflict_clause()) == {li('!true')}
 
+@pytest.mark.repeat(5)
 def test_conflict_3():
     # credits to https://www.cs.princeton.edu/courses/archive/fall13/cos402/readings/SAT_learning_clauses.pdf
     solver = Solver()
@@ -52,5 +57,4 @@ def test_conflict_3():
     solver.decide(li('!x1'))
     repeated_unitprop(solver)
     assert solver.conflict()
-    print(solver.reasoning)
     assert set(solver.conflict_clause()) == {li('!x4'), li('x8'), li('x9'), li('!true')}
