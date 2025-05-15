@@ -6,25 +6,49 @@ from solver.utils import li, lii, cl, ec
 
 @dataclass
 class Solver:
-    clauses: List[Clause] = field(default_factory=list)
+    clauses: List[Clause] = field(init=False)
     assignments: Dict[Literal, int] = field(init=False)
     reasoning: Dict[LiteralInt, List[LiteralInt]] = field(init=False)
     current_decision_level: int = field(init=False)
     variables: Set[str] = field(init=False)
+    solved: bool | None = field(init=False)
 
     def __post_init__(self):
         self.reset()
 
     def reset(self):
+        self.clauses = list()
         self.assignments = dict()
         self.reasoning = dict()
         self.current_decision_level = 0
         self.variables = set(literal[0] for clause in self.clauses for literal in clause)
         self.add_clause(cl("true true true"))
+        self.solved = None
 
     def add_clause(self, clause: Clause):
         self.clauses.append(clause)
         self.variables.update(literal[0] for literal in clause)
+
+    def add_extended_clause(self, clause: ExtendedClause):
+        if len(clause) == 0:
+            return
+        if len(clause) == 1:
+            self.add_clause((clause[0], li('!true'), li('!true')))
+            return
+        if len(clause) == 2:
+            self.add_clause((clause[0], clause[1], li('!true')))
+            return
+        if len(clause) == 3:
+            self.add_clause((clause[0], clause[1], clause[2]))
+            return
+        link: str = f'link_{random.randint(0, 2**32)}'
+        prev_link: str = ""
+        self.add_clause((clause[0], clause[1], li(link)))
+        for literal in clause[2:-2]:
+            prev_link = link
+            link = f'link_{random.randint(0, 2**32)}'
+            self.add_clause((li("!"+prev_link), literal, li(link)))
+        self.add_clause((li("!"+prev_link), clause[-2], clause[-1]))
 
     def unit_propagation(self) -> bool:
         progress = False
