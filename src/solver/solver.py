@@ -11,7 +11,7 @@ class Solver:
     reasoning: Dict[LiteralInt, List[LiteralInt]] = field(init=False)
     current_decision_level: int = field(init=False)
     variables: Set[str] = field(init=False)
-    solved: bool | None = field(init=False)
+    satisfiable: bool | None = field(init=False)
 
     def __post_init__(self):
         self.reset()
@@ -23,7 +23,7 @@ class Solver:
         self.current_decision_level = 0
         self.variables = set(literal[0] for clause in self.clauses for literal in clause)
         self.add_clause(cl("true true true"))
-        self.solved = None
+        self.satisfiable = None
 
     def add_clause(self, clause: Clause):
         self.clauses.append(clause)
@@ -74,9 +74,12 @@ class Solver:
     def unassigned_variables(self) -> Set[str]:
         return {variable for variable in self.variables if li(variable) not in self.assignments and li('!' + variable) not in self.assignments}
 
-    def decision_heuristic(self) -> Literal:
+    def decision_heuristic(self) -> Literal | None:
         # just use a random literal whatever
-        return (random.sample(self.unassigned_variables(), 1)[0], random.choice((True, False)))
+        unassigned_variables = self.unassigned_variables()
+        if unassigned_variables:
+            return (random.sample(list(unassigned_variables), 1)[0], random.choice((True, False)))
+        return
 
     def conflict(self) -> bool:
         return li('!true') in self.assignments
@@ -110,7 +113,8 @@ class Solver:
         return list((literal[0], not literal[1]) for literal in lowers | leftovers)
 
     def backjump_level_heuristic(self, conflict_clause: ExtendedClause) -> int:
-        return max((self.assignments[literal] for literal in conflict_clause if self.assignments[literal] < self.current_decision_level), default=0)
+        captured_literals = [(literal[0], not literal[1]) for literal in conflict_clause]
+        return max((self.assignments[literal] for literal in captured_literals if self.assignments[literal] < self.current_decision_level), default=0)
 
     def decide(self, literal: Literal):
         if literal in self.assignments:
@@ -128,3 +132,27 @@ class Solver:
         for literal in list(self.reasoning.keys()):
             if literal[2] > level:
                 del self.reasoning[literal]
+
+    def solve(self, _debug_time_limit: int | None = None) -> bool:
+        clock = 0
+        while True:
+            clock += 1
+            if _debug_time_limit is not None:
+                assert clock <= _debug_time_limit
+            if self.unit_propagation():
+                continue
+            if not self.conflict():
+                decision = self.decision_heuristic()
+                if decision is None:
+                    self.satisfiable = True
+                    break
+                self.decide(decision)
+                continue
+            if self.current_decision_level == 0:
+                self.satisfiable = False
+                break
+            conflict_clause = self.conflict_clause()
+            self.add_extended_clause(conflict_clause)
+            backjump = self.backjump_level_heuristic(conflict_clause)
+            self.backjump(backjump)
+        return self.satisfiable
