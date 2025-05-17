@@ -3,7 +3,7 @@ from typing import List, Tuple
 import pytest
 from solver.solver import Solver
 from solver.types import Literal
-from solver.utils import li, cl
+from solver.utils import li
 
 def int_to_bool_list(n: int, bit_length: int | None = None) -> List[bool]:
     # (creds to chatgpt)

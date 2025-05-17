@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Set
 import random
 from solver.types import Literal, LiteralInt, Clause, ExtendedClause
-from solver.utils import li, lii, cl, ec
+from solver.utils import li, lii, cl
 
 @dataclass
 class Solver:
