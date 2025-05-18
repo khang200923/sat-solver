@@ -1,3 +1,4 @@
+from datetime import datetime
 import cProfile
 import pstats
 import random
@@ -23,6 +24,10 @@ def main():
         assert result == {li('true'), *solution}
 
 if __name__ == "__main__":
-    cProfile.run('main()', 'log')
-    p = pstats.Stats('log')
-    p.sort_stats('cumtime').print_stats(20)
+    filename = f"log/profile-solve-time-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    profile_fn = f"{filename}.prof"
+    readable_fn = f"{filename}.txt"
+    cProfile.run('main()', filename=profile_fn)
+    with open(readable_fn, 'w', encoding="utf-8") as f:
+        p = pstats.Stats(profile_fn, stream=f)
+        p.sort_stats('cumtime').print_stats(20)
