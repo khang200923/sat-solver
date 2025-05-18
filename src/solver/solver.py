@@ -52,10 +52,13 @@ class Solver:
     def unit_propagation(self) -> bool:
         progress = False
         for clause in self.clauses:
-            if any(literal in self.assignments for literal in clause):
+            # skip clauses that are already satisfied
+            if set(clause) & set(self.assignments):
                 continue
+
             leftovers = set(literal for literal in clause if (literal[0], not literal[1]) not in self.assignments)
             falsifiers = set((literal[0], not literal[1], self.assignments[(literal[0], not literal[1])]) for literal in clause if (literal[0], not literal[1]) in self.assignments)
+
             if len(leftovers) == 0:
                 # conflict
                 self.assign(li('!true'), list(falsifiers))
@@ -71,14 +74,18 @@ class Solver:
         self.reasoning[literal + (self.current_decision_level,)] = reasoning
 
     def unassigned_variables(self) -> Set[str]:
-        return {variable for variable in self.variables if li(variable) not in self.assignments and li('!' + variable) not in self.assignments}
+        assigned = self.assignments
+        return {
+            var
+            for var in self.variables
+            if li(var) not in assigned and li("!" + var) not in assigned
+        }
 
     def decision_heuristic(self) -> Literal | None:
-        # just use a random literal whatever
-        unassigned_variables = self.unassigned_variables()
-        if unassigned_variables:
-            return (random.sample(list(unassigned_variables), 1)[0], random.choice((True, False)))
-        return
+        unassigned = tuple(self.unassigned_variables())
+        if unassigned:
+            return (random.choice(unassigned), bool(random.getrandbits(1)))
+        return None
 
     def conflict(self) -> bool:
         return li('!true') in self.assignments
