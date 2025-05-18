@@ -56,15 +56,23 @@ class Solver:
             if set(clause) & set(self.assignments):
                 continue
 
-            leftovers = set(literal for literal in clause if (literal[0], not literal[1]) not in self.assignments)
-            falsifiers = set((literal[0], not literal[1], self.assignments[(literal[0], not literal[1])]) for literal in clause if (literal[0], not literal[1]) in self.assignments)
+            leftovers = set()
+            falsifiers = []
+            for literal in clause:
+                neg_literal = (literal[0], not literal[1])
+                if neg_literal not in self.assignments:
+                    leftovers.add(literal)
+                    if len(leftovers) > 1:
+                        break
+                else:
+                    falsifiers.append((literal[0], not literal[1], self.assignments[neg_literal]))
 
             if len(leftovers) == 0:
                 # conflict
-                self.assign(li('!true'), list(falsifiers))
+                self.assign(li('!true'), falsifiers)
                 return progress
             if len(leftovers) == 1:
-                self.assign(list(leftovers)[0], list(falsifiers))
+                self.assign(list(leftovers)[0], falsifiers)
                 progress = True
         return progress
 
