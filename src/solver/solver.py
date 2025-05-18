@@ -56,23 +56,28 @@ class Solver:
             if set(clause) & set(self.assignments):
                 continue
 
-            leftovers = set()
+            skip_flag = False
+            leftover: Literal | None = None
             falsifiers = []
             for literal in clause:
                 neg_literal = (literal[0], not literal[1])
                 if neg_literal not in self.assignments:
-                    leftovers.add(literal)
-                    if len(leftovers) > 1:
+                    if leftover is not None and leftover != literal:
+                        skip_flag = True
                         break
+                    leftover = literal
                 else:
                     falsifiers.append((literal[0], not literal[1], self.assignments[neg_literal]))
 
-            if len(leftovers) == 0:
+            if skip_flag:
+                # un unitprop-able, so we skip
+                continue
+            if leftover is None:
                 # conflict
                 self.assign(li('!true'), falsifiers)
                 return progress
-            if len(leftovers) == 1:
-                self.assign(list(leftovers)[0], falsifiers)
+            if leftover is not None:
+                self.assign(leftover, falsifiers)
                 progress = True
         return progress
 
